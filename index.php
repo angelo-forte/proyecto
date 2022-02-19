@@ -16,10 +16,20 @@
         <button type="button" id="btnProductos" class="btn btn-primary">Productos</button>
         <button type="button" id="btnRecibos" class="btn btn-primary">Recibos</button>
         <button type="button" id="btnDespachos" class="btn btn-primary">Despachos</button>
-      </div>
+      </div><br>
       <div id="divProductos">
+        <div id="menuProductos">
+          <button type="button" id="btnProductosAgregar" class="btn btn-success btn-sm">Agregar</button>
+          <button type="button" id="btnProductosConsultar" class="btn btn-light btn-sm">Consultar</button>
+          <div id="divSelectProductos">
+            <label for="selectProductos">Selecciona un producto:</label>
+            <select name="selectProductos" id="selectProductos">
+            </select>
+          </div>
+        </div>
         <div class="row">
-          <div class="col-md-12">
+          <div id="divTablaAgregarProductos" class="col-md-12"><br>
+            <p>Agregar nuevo producto</p>
             <table id="tabla" class="table thead-light">
               <thead>
                 <tr>
@@ -53,6 +63,43 @@
               </tbody>
             </table>
           </div>
+          <!-- ESTE ES EL DIV PARA MOSTRAR LOS DATOS DEL PRODUCTO SELECCIONADO -->
+          <div id="divTablaMostrarProductos" class="col-md-12"><br>
+            <p></p>
+            <table id="tablaMostrarProductos" class="table thead-light">
+              <thead>
+                <tr>
+                  <th>
+                    Codigo
+                  </th>
+                  <th>
+                    Descripcion
+                  </th>
+                  <th>
+                    Precio
+                  </th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <input type="text" id="mostrarCodigo" class="form-control codigo" value="" />
+                    <input type="text" id="idProducto" />
+                  </td>
+                  <td>
+                    <input type="text" id="mostrarDescripcion" class="form-control descripcion" value="" />
+                  </td>
+                  <td>
+                    <input type="number" id="mostrarPrecio" class="form-control precio solonumeros" value="" />
+                  </td>
+                  <td>
+                    <button type="button" class="btn btn-success" id="btnEdicionProductos">Aplicar Cambio</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -65,6 +112,7 @@
 <script>
 $(document).ready(function(){
   $('#divProductos').hide();
+  $('#divSelectProductos').hide();
   $("#btnLearn").click(function() {
     $("#btnLearn").hide();
     $('#tabla').hide();
@@ -76,6 +124,85 @@ $(document).ready(function(){
     $('#btnProductos').removeClass('btn-primary');
     $('#btnProductos').addClass('btn-success');
   }); //fin de btnProductos click
+
+  //Se define el evento onclick para el boton Consultar Producto
+  $('#btnProductosConsultar').on('click', function () {
+    $('#divTablaAgregarProductos').hide();
+    $('#divTablaMostrarProductos').hide();
+    $('#divSelectProductos').show();
+    $('#btnProductosConsultar').removeClass('btn-light');
+    $('#btnProductosConsultar').addClass('btn-success');
+    $('#btnProductosAgregar').removeClass('btn-success');
+    $('#btnProductosAgregar').addClass('btn-light');
+
+    //Hacemos petición ajax para llenar el select de Productos
+    $.ajax({type: "POST",
+      dataType: "json",
+      data: {metodo:'DameProductos'},
+      url: "api/api.php",
+    }).done(function(result){
+      if (result.status == 'Success'){
+        var cadena = '';
+        //console.log(result);
+        //console.log(result.items);
+        //console.log(result.items.length);
+        for (var i=0;i < result.items.length;i++){
+          cadena += '<option value="'+result.items[i].id+'" >'+result.items[i].codigo+'</option>';
+        }
+        $('#selectProductos').empty(); //Limpio el select
+        $('#selectProductos').append(cadena); //Lo lleno con la cadena
+        //console.log(cadena);
+      } //de mi if result
+      else{
+        alert('Hubo una falla.')
+      }
+    });
+  });
+
+  $('#btnEdicionProductos').on('click', function () {
+    var idProducto = $('#idProducto').val()
+    var codigo = $('#mostrarCodigo').val();
+    var descripcion = $('#mostrarDescripcion').val();
+    var precio = $('#mostrarPrecio').val();
+    $.ajax({type: "POST",
+      dataType: "json",
+      data: {metodo:'GuardaProductoCambio',codigo:codigo,descripcion:descripcion,
+            precio:precio,idProducto:idProducto},
+      url: "api/api.php",
+    }).done(function(result){
+      if (result.status == 'Success'){
+        alert('Actualizacion exitosa');
+        $('#idProducto').val('')
+        $('#mostrarCodigo').val('');
+        $('#mostrarDescripcion').val('');
+        $('#mostrarPrecio').val('');
+      }
+      else {
+        alert('Hubo un error');
+      }
+    });
+  });
+
+
+  $('#selectProductos').on('change', function () {
+    var idProducto = $('#selectProductos').val(); //guardo el valor del select
+    $('#idProducto').val(idProducto);
+    //Hacemos petición ajax para obtener los datos del id seleccionado
+    $.ajax({type: "POST",
+      dataType: "json",
+      data: {metodo:'DameProductosDetalles',idProducto:idProducto},
+      url: "api/api.php",
+    }).done(function(result){
+      if (result.status == 'Success'){
+        $('#divTablaMostrarProductos').show(); //Mostramos el div
+        $('#mostrarCodigo').val(result.codigo);
+        $('#mostrarDescripcion').val(result.descripcion);
+        $('#mostrarPrecio').val(result.precio);
+      }
+    });
+  });
+
+
 
 }); //Fin del document ready
 
@@ -95,13 +222,13 @@ function AgregarProducto(){
       url: "api/api.php",
     }).done(function(result){
       if (result.status == 'Success'){
-        console.log('Me estoy haciendo guey!!');
+        console.log('Aqui pasando el rato!!');
         setTimeout(function(){
           $('#tabla').attr('disable',true);
           $('#codigo').val('');
           $('#descripcion').val('');
           $('#precio').val('');
-				}, 2000);
+				}, 4000);
 
       } //de mi if result
       else{
